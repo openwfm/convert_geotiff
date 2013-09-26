@@ -24,7 +24,7 @@ if test "x${with_libtiff}" = "xyes" -o "x${with_libtiff}" = "x" ; then
     LIBS="-ltiff $LIBS"
     AC_MSG_RESULT([using pre-installed libtiff.])
   else
-    AC_MSG_RESULT([using internal TIFF code.])
+    AC_MSG_ERROR([Could not find compatible libtiff.  Try using --with-libtiff=<prefix>])
   fi
 
 else
@@ -48,7 +48,7 @@ fi
 if test "${HAVE_BIGTIFF}" = "yes" ; then
   TIFF_OPTS="-DBIGTIFF_SUPPORT"
 
-dnl   LOC_MSG([BigTIFF support enabled.])
+  echo "BigTIFF support enabled."
 fi
 
 AC_SUBST(TIFF_SETTING,${TIFF_SETTING})
