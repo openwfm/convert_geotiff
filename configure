@@ -4314,22 +4314,9 @@ done
 ac_fn_c_check_header_mongrel "$LINENO" "geotiffio.h" "ac_cv_header_geotiffio_h" "$ac_includes_default"
 if test "x$ac_cv_header_geotiffio_h" = xyes; then :
 
-else
-  ac_fn_c_check_header_mongrel "$LINENO" "geotiff/geotiffio.h" "ac_cv_header_geotiff_geotiffio_h" "$ac_includes_default"
-if test "x$ac_cv_header_geotiff_geotiffio_h" = xyes; then :
-  EXTRA_INCLUDES="-DRELATIVE_GTIFF=geotiff/"
-else
-  as_fn_error $? "Cannot find GEOTIFF headers" "$LINENO" 5
-fi
-
-
-fi
-
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libproj" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libproj" >&5
 $as_echo_n "checking for libproj... " >&6; }
-ac_fn_c_check_decl "$LINENO" "HAVE_LIBPROJ" "ac_cv_have_decl_HAVE_LIBPROJ" "#include <geo_config.h>
+  ac_fn_c_check_decl "$LINENO" "HAVE_LIBPROJ" "ac_cv_have_decl_HAVE_LIBPROJ" "#include <geo_config.h>
 "
 if test "x$ac_cv_have_decl_HAVE_LIBPROJ" = xyes; then :
   HAVE_LIBPROJ=yes
@@ -4337,6 +4324,31 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libproj support is not compiled into geotiff.  convert_geotiff will not be able to work with projected files." >&5
 $as_echo "$as_me: WARNING: libproj support is not compiled into geotiff.  convert_geotiff will not be able to work with projected files." >&2;}
 fi
+
+
+else
+  ac_fn_c_check_header_mongrel "$LINENO" "geotiff/geotiffio.h" "ac_cv_header_geotiff_geotiffio_h" "$ac_includes_default"
+if test "x$ac_cv_header_geotiff_geotiffio_h" = xyes; then :
+  EXTRA_INCLUDES="-DRELATIVE_GTIFF=geotiff/";
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libproj" >&5
+$as_echo_n "checking for libproj... " >&6; }
+  ac_fn_c_check_decl "$LINENO" "HAVE_LIBPROJ" "ac_cv_have_decl_HAVE_LIBPROJ" "#include <geogrid/geo_config.h>
+"
+if test "x$ac_cv_have_decl_HAVE_LIBPROJ" = xyes; then :
+  HAVE_LIBPROJ=yes
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libproj support is not compiled into geotiff.  convert_geotiff will not be able to work with projected files." >&5
+$as_echo "$as_me: WARNING: libproj support is not compiled into geotiff.  convert_geotiff will not be able to work with projected files." >&2;}
+fi
+
+
+else
+  as_fn_error $? "Cannot find GEOTIFF headers" "$LINENO" 5
+fi
+
+
+fi
+
 
 
 EXTRA_INCLUDES=$EXTRA_INCLUDES
