@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #ifdef _UNDERSCORE
 #define write_geogrid write_geogrid_
@@ -40,20 +41,20 @@
 #define LITTLE_ENDIAN 1
 
 /* so that wordsize = 4 can be supported: */
-typedef unsigned int iarray_t;
+typedef unsigned long iarray_t;
 
 int write_geogrid(
-                  float * rarray,          /* The array to be written */
-                  int * nx,                /* x-dimension of the array */
-                  int * ix,                /* starting x-index of the tile */
-                  int * ny,                /* y-dimension of the array */
-                  int * iy,                /* starting y-index of the tile */
-                  int * nz,                /* z-dimension of the array */
-                  int * bdr,               /* tile border width */
-                  int * isigned,           /* 0=unsigned data, 1=signed data */
-                  int * endian,            /* 0=big endian, 1=little endian */
-                  float * scalefactor,     /* value to divide array elements by before truncation to integers */
-                  int * wordsize )         /* number of bytes to use for each array element */
+                 const float * rarray,          /* The array to be written */
+                 const int * nx,                /* x-dimension of the array */
+                 const int * ix,                /* starting x-index of the tile */
+                 const int * ny,                /* y-dimension of the array */
+                 const int * iy,                /* starting y-index of the tile */
+                 const int * nz,                /* z-dimension of the array */
+                 const int * bdr,               /* tile border width */
+                 const int * isigned,           /* 0=unsigned data, 1=signed data */
+                 const int * endian,            /* 0=big endian, 1=little endian */
+                 const float * scalefactor,     /* value to divide array elements by before truncation to integers */
+                 const int * wordsize )         /* number of bytes to use for each array element */
 {
   int i, narray;
   int A2, B2;
@@ -77,7 +78,7 @@ int write_geogrid(
   
   /* Scale real-valued array by scalefactor and convert to integers */
   for (i=0; i<narray; i++)
-    iarray[i] = (iarray_t)(rarray[i] / (*scalefactor));
+    iarray[i] = (iarray_t)fabs(rarray[i] / (*scalefactor));
   
   /* 
    Set up byte offsets for each wordsize depending on byte order.
@@ -99,14 +100,14 @@ int write_geogrid(
   switch(*wordsize) {
     case 1:
       for(i=0; i<narray; i++) {
-        if (iarray[i] < 0 && *isigned) iarray[i] += (one << 8);
+        if (rarray[i] < 0 && *isigned) iarray[i] += (one << 8);
         barray[(*wordsize)*i] = (unsigned char)(iarray[i] & 0xff);
       }
       break;
       
     case 2:
       for(i=0; i<narray; i++) {
-        if (iarray[i] < 0 && *isigned) iarray[i] += (one << 16);
+        if (rarray[i] < 0 && *isigned) iarray[i] += (one << 16);
         barray[(*wordsize)*i+A2] = (unsigned char)((iarray[i] >> 8) & 0xff);
         barray[(*wordsize)*i+B2] = (unsigned char)( iarray[i]       & 0xff);
       }
@@ -114,7 +115,7 @@ int write_geogrid(
       
     case 3:
       for(i=0; i<narray; i++) {
-        if (iarray[i] < 0 && *isigned) iarray[i] += (one << 24);
+        if (rarray[i] < 0 && *isigned) iarray[i] += (one << 24);
         barray[(*wordsize)*i+A3] = (unsigned char)((iarray[i] >> 16) & 0xff);
         barray[(*wordsize)*i+B3] = (unsigned char)((iarray[i] >> 8)  & 0xff);
         barray[(*wordsize)*i+C3] = (unsigned char)( iarray[i]        & 0xff);
@@ -122,7 +123,7 @@ int write_geogrid(
       break;
     case 4:
       for(i=0; i<narray; i++) {
-        if (iarray[i] < 0 && *isigned) iarray[i] += (one << 32);
+        if (rarray[i] < 0 && *isigned) iarray[i] += (one << 32);
         barray[(*wordsize)*i+A4] = (unsigned char)((iarray[i] >> 24) & 0xff);
         barray[(*wordsize)*i+B4] = (unsigned char)((iarray[i] >> 16) & 0xff);
         barray[(*wordsize)*i+C4] = (unsigned char)((iarray[i] >> 8)  & 0xff);

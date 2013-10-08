@@ -119,7 +119,7 @@ int main (int argc, char * argv[]) {
         break;
       case 'w':
         if(sscanf(optarg,"%i",&word_size) != 1 ||
-           word_size != 1 && word_size != 2 && word_size != 4)
+           (word_size != 1 && word_size != 2 && word_size != 4))
         {
           fprintf(stderr,"Invalid argument to -w.\n");
           print_usage(stderr,argv[0]);
@@ -245,6 +245,6 @@ int main (int argc, char * argv[]) {
   convert_from_f(idx,buffer);
   
   /* free up memory */
-  free_buffer((char*) buffer);
+  free_buffer((unsigned char*) buffer);
   
 }

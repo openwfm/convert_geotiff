@@ -26,8 +26,8 @@ extern "C" {
 #endif
 
   GeogridIndex get_index_from_geotiff(TIFF *);
-  char* alloc_buffer(tsize_t);
-  void free_buffer(char*);
+  unsigned char* alloc_buffer(tsize_t);
+  void free_buffer(unsigned char*);
   float* get_tiff_buffer(TIFF*);
 
 #ifdef __cplusplus

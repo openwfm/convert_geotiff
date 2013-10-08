@@ -220,16 +220,16 @@ GeogridIndex get_index_from_geotiff(
   return (idx);
 }
 
-char* alloc_buffer(tsize_t n) {
+unsigned char* alloc_buffer(tsize_t n) {
   /* Use the libtiff macro for allocating an `n' byte array.
      Typically, this is just a call to malloc. */
   tdata_t buf;
   buf=_TIFFmalloc(n);
   //memset((void*)buf,0xEE,n);
-  return ( (char*) buf );
+  return ( (unsigned char*) buf );
 }
 
-void free_buffer( char *buf ) {
+void free_buffer( unsigned char *buf ) {
   /* Use the libtiff macro for deallocating an array. 
      Typically, this is just a call to free. */
   _TIFFfree( (tdata_t) buf );
@@ -333,7 +333,7 @@ float* get_tiff_buffer(
           /* read the tile into memory, check for error */
           //memset((void*)tilebuf,0xFF,TIFFTileSize(file));
           if( (result=TIFFReadTile (file,tilebuf,i,j,k,0)) == -1){
-            fprintf(stderr, "Read error on input tile number %d,%d\n", i,j);
+            fprintf(stderr, "Read error on input tile number %lu,%lu\n", i,j);
             exit(EXIT_FAILURE);
           }
           
@@ -379,7 +379,7 @@ float* get_tiff_buffer(
       if((result = TIFFReadEncodedStrip (file, stripCount,
                                          buffer + imageOffset,
                                          stripSize)) == -1){
-        fprintf(stderr, "Read error on input strip number %d\n", stripCount);
+        fprintf(stderr, "Read error on input strip number %lu\n", stripCount);
         exit(EXIT_FAILURE);
       }
       

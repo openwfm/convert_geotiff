@@ -31,6 +31,7 @@
  */
 
 #include "geogrid_tiles.h"
+#include "write_geogrid.h"
 
 #include <string.h>
 #include <stdlib.h>
