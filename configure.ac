@@ -1,7 +1,5 @@
 AC_INIT([convert_geotiff], [0.0.0], [jon.beezley@gmail.com], [convert_geotiff], [https://github.com/jbeezley/convert_geotiff])
-AC_PREREQ()
 AM_INIT_AUTOMAKE([foreign])
-AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
 
 
