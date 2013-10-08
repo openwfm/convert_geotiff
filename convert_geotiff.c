@@ -189,6 +189,7 @@ int main (int argc, char * argv[]) {
   strcpy(filename,argv[optind]);
   
   /* open geotiff file */
+  TIFFSetWarningHandler(NULL);
   file=XTIFFOpen(filename,"r");
   if (file == NULL) {
     fprintf(stderr,"Could not open file %s.\n",filename);
