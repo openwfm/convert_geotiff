@@ -13,10 +13,16 @@ See read_geotiff.c for documentation.
 
 #include "geogrid_index.h"
 
+#ifdef RELATIVE_GTIFF
+#include <geotiff/geotiffio.h>
+#include <geotiff/xtiffio.h>
+#include <geotiff/geo_normalize.h>
+#else
 #include <geotiffio.h>
 #include <xtiffio.h>
-#include <tiffio.h>
 #include <geo_normalize.h>
+#endif
+#include <tiffio.h>
 
 extern const int BIGENDIAN_TEST_VAL;
 #define IS_BIGENDIAN() ( (*(char*)&BIGENDIAN_TEST_VAL) == 0 )

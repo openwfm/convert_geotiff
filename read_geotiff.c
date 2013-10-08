@@ -16,7 +16,11 @@
 
 #include "read_geotiff.h"
 
+#ifdef RELATIVE_GTIFF
+#include <geotiff/geo_tiffp.h>
+#else
 #include <geo_tiffp.h>
+#endif
 
 #include <string.h>
 #include <stdlib.h>

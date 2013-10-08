@@ -47,7 +47,11 @@
 #include "geogrid_tiles.h"
 #include "read_geotiff.h"
 
-#include "xtiffio.h"
+#ifdef RELATIVE_GTIFF
+#include <geotiff/xtiffio.h>
+#else
+#include <xtiffio.h>
+#endif
 
 #include <unistd.h>
 #include <stdio.h>
