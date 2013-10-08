@@ -1,0 +1,6 @@
+language: c
+compiler:
+    - gcc
+    - clang
+script: ./configure && make
+install: sudo apt-get install libgeotiff-dev libgeotiff-epsg
