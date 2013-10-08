@@ -16,5 +16,6 @@ AC_MSG_CHECKING([for libproj])
 AC_CHECK_DECL(HAVE_LIBPROJ, HAVE_LIBPROJ=yes, AC_MSG_WARN([libproj support is not compiled into geotiff.  convert_geotiff will not be able to work with projected files.]), [[#include <geo_config.h>]])
 
 LIBS="-lgeotiff -ltiff"
+AM_MAINTAINER_MODE([enable])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
