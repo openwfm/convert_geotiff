@@ -1,4 +1,4 @@
-AC_INIT([convert_geotiff], [0.0.0], [jon.beezley@gmail.com], [convert_geotiff], [https://github.com/jbeezley/convert_geotiff])
+AC_INIT([convert_geotiff], [0.1.0], [jon.beezley@gmail.com], [convert_geotiff], [https://github.com/jbeezley/convert_geotiff])
 AM_INIT_AUTOMAKE([foreign])
 AC_PROG_CC
 
