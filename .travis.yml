@@ -2,5 +2,5 @@ language: c
 compiler:
     - gcc
     - clang
-script: ./configure -disable-maintainer-mode && make
+script: ./configure -disable-maintainer-mode && make && make test
 install: sudo apt-get install libgeotiff-dev libgeotiff-epsg

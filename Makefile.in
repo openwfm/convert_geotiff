@@ -270,7 +270,7 @@ AM_CFLAGS = ${EXTRA_INCLUDES}
 # LDADD = 
 convert_geotiff_SOURCES = convert_geotiff.c geogrid_tiles.c read_geotiff.c write_geogrid.c
 noinst_HEADERS = geogrid_index.h geogrid_tiles.h read_geotiff.h write_geogrid.h
-dist_noinst_SCRIPTS = autogen.sh
+dist_noinst_SCRIPTS = autogen.sh test
 all: all-am
 
 .SUFFIXES:
@@ -729,6 +729,10 @@ uninstall-am: uninstall-binPROGRAMS
 	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS
 
+
+.PHONY: test
+test: convert_geotiff
+	@cd test && ./runtest.sh
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
