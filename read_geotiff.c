@@ -47,7 +47,7 @@ GeogridIndex get_index_from_geotiff(
   int projid,count;
   short modeltype;
   GeogridIndex idx;
-  double stdpar1,stdpar2,stdlon,olat,olon,dx,dy;
+  double stdpar1,stdpar2,stdlon,olat,olon;
   double pixelscale[3];
   uint32 inx,iny,inz;
   uint16 orientation,format;

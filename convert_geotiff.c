@@ -83,7 +83,7 @@ int main (int argc, char * argv[]) {
   
   int c,i,j;
   int categorical_range,border_width,word_size,isigned,tile_size;
-  float scale,missing,missing0;
+  float scale,missing;
   GeogridIndex idx;
   char units[STRING_LENGTH],description[STRING_LENGTH],filename[STRING_LENGTH];
   TIFF *file;
@@ -98,7 +98,7 @@ int main (int argc, char * argv[]) {
   strcpy(description,"\"NO DESCRIPTION\"");
   categorical_range=0;
   tile_size=100;
-  missing0=0.;
+  missing=0;
   
   /* parse options */
   while ( (c = getopt(argc, argv, "hzs:c:b:w:t:m:u:d:") ) != -1) {

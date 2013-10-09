@@ -224,8 +224,7 @@ void write_tile(
   float *arr              /* tile data buffer */
                 )
 {
-  int itx,ity,isgn,endian,nx,ny,nz,i,j;
-  float swp;
+  int itx,ity,isgn,endian,nx,ny,nz;
   
   /* get global index for construction tile file name */
   itx=itile_x*idx.tx+1;
