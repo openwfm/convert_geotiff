@@ -251,5 +251,5 @@ int main (int argc, char * argv[]) {
   
   /* free up memory */
   free_buffer((unsigned char*) buffer);
-  
+  exit(0);  
 }
