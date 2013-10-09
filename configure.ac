@@ -19,7 +19,7 @@ AC_CHECK_HEADER([geotiffio.h], [
                  ],
     [AC_CHECK_HEADER([geotiff/geotiffio.h], [EXTRA_INCLUDES="-DRELATIVE_GTIFF=geotiff/"; 
   AC_MSG_CHECKING([for libproj])
-  AC_CHECK_DECL([HAVE_LIBPROJ], [HAVE_LIBPROJ=yes], [AC_MSG_WARN([libproj support is not compiled into geotiff.  convert_geotiff will not be able to work with projected files.])], [[#include <geogrid/geo_config.h>]])
+  AC_CHECK_DECL([HAVE_LIBPROJ], [HAVE_LIBPROJ=yes], [AC_MSG_WARN([libproj support is not compiled into geotiff.  convert_geotiff will not be able to work with projected files.])], [[#include <geotiff/geo_config.h>]])
       ],
         [AC_MSG_ERROR([Cannot find GEOTIFF headers])],[])],[])
 

@@ -4332,7 +4332,7 @@ if test "x$ac_cv_header_geotiff_geotiffio_h" = xyes; then :
   EXTRA_INCLUDES="-DRELATIVE_GTIFF=geotiff/";
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libproj" >&5
 $as_echo_n "checking for libproj... " >&6; }
-  ac_fn_c_check_decl "$LINENO" "HAVE_LIBPROJ" "ac_cv_have_decl_HAVE_LIBPROJ" "#include <geogrid/geo_config.h>
+  ac_fn_c_check_decl "$LINENO" "HAVE_LIBPROJ" "ac_cv_have_decl_HAVE_LIBPROJ" "#include <geotiff/geo_config.h>
 "
 if test "x$ac_cv_have_decl_HAVE_LIBPROJ" = xyes; then :
   HAVE_LIBPROJ=yes
