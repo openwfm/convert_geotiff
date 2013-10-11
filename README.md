@@ -76,3 +76,7 @@ Limitations
 The current code has some limitations which are listed here.
 * Datasets must not contain more than 99,999 grid points in each axis.  This is a limitation of the geogrid format itself, due to the naming convention of the tiles.  However, it is possible (but inefficient) to split a single dataset into multiple directories for this purpose.  A better solution would be to resample the data to a lower spatial resolution prior to converting.
 * This program cannot convert between geographic projections, so the input data must be in a projection supported by WPS.  All of the projections [supported by WPS](http://www.mmm.ucar.edu/wrf/users/docs/user_guide_V3.5/users_guide_chap3.htm#_Description_of_index) should work for this conversion program; however, only UTM, Albers equal area, and lat-lon have been tested.  In addition, data sources may not conform to [EPSG standards](http://www.spatialreference.org/) in their projection tags; the output should always be checked before use.
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/jbeezley/convert_geotiff/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
