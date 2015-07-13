@@ -100,14 +100,14 @@ int write_geogrid(
   switch(*wordsize) {
     case 1:
       for(i=0; i<narray; i++) {
-        if (rarray[i] < 0 && *isigned) iarray[i] += (one << 8);
+        if (rarray[i] < 0 && *isigned) iarray[i] = -iarray[i];
         barray[(*wordsize)*i] = (unsigned char)(iarray[i] & 0xff);
       }
       break;
       
     case 2:
       for(i=0; i<narray; i++) {
-        if (rarray[i] < 0 && *isigned) iarray[i] += (one << 16);
+        if (rarray[i] < 0 && *isigned) iarray[i] = -iarray[i];
         barray[(*wordsize)*i+A2] = (unsigned char)((iarray[i] >> 8) & 0xff);
         barray[(*wordsize)*i+B2] = (unsigned char)( iarray[i]       & 0xff);
       }
@@ -115,7 +115,7 @@ int write_geogrid(
       
     case 3:
       for(i=0; i<narray; i++) {
-        if (rarray[i] < 0 && *isigned) iarray[i] += (one << 24);
+        if (rarray[i] < 0 && *isigned) iarray[i] = -iarray[i];
         barray[(*wordsize)*i+A3] = (unsigned char)((iarray[i] >> 16) & 0xff);
         barray[(*wordsize)*i+B3] = (unsigned char)((iarray[i] >> 8)  & 0xff);
         barray[(*wordsize)*i+C3] = (unsigned char)( iarray[i]        & 0xff);
@@ -123,7 +123,7 @@ int write_geogrid(
       break;
     case 4:
       for(i=0; i<narray; i++) {
-        if (rarray[i] < 0 && *isigned) iarray[i] += (one << 32);
+        if (rarray[i] < 0 && *isigned) iarray[i] = -iarray[i];
         barray[(*wordsize)*i+A4] = (unsigned char)((iarray[i] >> 24) & 0xff);
         barray[(*wordsize)*i+B4] = (unsigned char)((iarray[i] >> 16) & 0xff);
         barray[(*wordsize)*i+C4] = (unsigned char)((iarray[i] >> 8)  & 0xff);
