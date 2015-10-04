@@ -2,6 +2,8 @@ AC_INIT([convert_geotiff], [0.1.0], [jon.beezley@gmail.com], [convert_geotiff], 
 AM_INIT_AUTOMAKE([foreign])
 AC_PROG_CC
 
+AC_CHECK_LIB([m],[ceil])
+
 EXTRA_INCLUDES=""
 AC_MSG_CHECKING([for libtiff])
 AC_CHECK_LIB([tiff], [TIFFGetField], [HAVE_TIFF=yes], [AC_MSG_ERROR([Cannot find TIFF library.  Try setting CFLAGS and LDFLAGS if it is installed in a non-standard location.])],[])
@@ -24,7 +26,7 @@ AC_CHECK_HEADER([geotiffio.h], [
         [AC_MSG_ERROR([Cannot find GEOTIFF headers])],[])],[])
 
 AC_SUBST(EXTRA_INCLUDES,$EXTRA_INCLUDES)
-LIBS="-lgeotiff -ltiff"
+LIBS="-lgeotiff -ltiff $LIBS"
 AM_MAINTAINER_MODE([enable])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
