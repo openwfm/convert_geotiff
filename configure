@@ -4374,12 +4374,12 @@ fi
 
 
 else
-  ac_fn_c_check_header_mongrel "$LINENO" "geotiff/geotiffio.h" "ac_cv_header_geotiff_geotiffio_h" "$ac_includes_default"
+  ac_fn_c_check_header_mongrel "$LINENO" "$GEOTIFF/include/geotiffio.h" "ac_cv_header_geotiff_geotiffio_h" "$ac_includes_default"
 if test "x$ac_cv_header_geotiff_geotiffio_h" = xyes; then :
-  EXTRA_INCLUDES="-DRELATIVE_GTIFF=geotiff/";
+  EXTRA_INCLUDES="-DRELATIVE_GTIFF=$GEOTIFF/include/";
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libproj" >&5
 $as_echo_n "checking for libproj... " >&6; }
-  ac_fn_c_check_decl "$LINENO" "HAVE_LIBPROJ" "ac_cv_have_decl_HAVE_LIBPROJ" "#include <geotiff/geo_config.h>
+  ac_fn_c_check_decl "$LINENO" "HAVE_LIBPROJ" "ac_cv_have_decl_HAVE_LIBPROJ" "#include <geo_config.h>
 "
 if test "x$ac_cv_have_decl_HAVE_LIBPROJ" = xyes; then :
   HAVE_LIBPROJ=yes
@@ -4400,7 +4400,7 @@ fi
 
 EXTRA_INCLUDES=$EXTRA_INCLUDES
 
-LIBS="$LIBS -lgeotiff -ltiff"
+LIBS="$LIBS -L$GEOTIFF/lib -lgeotiff -ltiff"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable maintainer-specific portions of Makefiles" >&5
 $as_echo_n "checking whether to enable maintainer-specific portions of Makefiles... " >&6; }
