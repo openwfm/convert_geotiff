@@ -1,17 +1,17 @@
-/* 
+/*
  File:   read_geotiff.c
- Author: Jonathan Beezley <jon.beezley.math@gmail.com> 
+ Author: Jonathan Beezley <jon.beezley.math@gmail.com>
  Date:   1-18-2010
- 
+
  Functions for reading geotiff files, plus various utilities.
- 
- GeogridIndex get_index_from_geotiff(TIFF*) : 
+
+ GeogridIndex get_index_from_geotiff(TIFF*) :
    Populate GeogridIndex structure with information that can be
    obtained from the geotiff tags.
- 
- float* get_tiff_buffer(TIFF*) : 
+
+ float* get_tiff_buffer(TIFF*) :
    Read the data from the tiff image file cast as an array of floats.
- 
+
  */
 
 #include "read_geotiff.h"
@@ -48,7 +48,7 @@ GeogridIndex get_index_from_geotiff(
   short modeltype;
   GeogridIndex idx;
   double stdpar1,stdpar2,stdlon,olat,olon;
-  double pixelscale[3];
+  double pixelscale[3], dx, dy;
   uint32 inx,iny,inz;
   uint16 orientation,format;
 
@@ -57,20 +57,28 @@ GeogridIndex get_index_from_geotiff(
   gtifh = GTIFNew(file);
   GTIFGetDefn(gtifh,&gtifp);
   GTIFKeyGet(gtifh,ProjStdParallel1GeoKey,&stdpar1,0,1);
+  //fprintf(stdout,"truelat1=%G\n",stdpar1);
   idx.truelat1=stdpar1;
   GTIFKeyGet(gtifh,ProjStdParallel2GeoKey,&stdpar2,0,1);
+  //fprintf(stdout,"truelat2=%G\n",stdpar2);
   idx.truelat2=stdpar2;
-  GTIFKeyGet(gtifh,ProjCenterLongGeoKey,&stdlon,0,1);
+  if ( !GTIFKeyGet(gtifh,ProjCenterLongGeoKey,&stdlon,0,1) )
+  GTIFKeyGet(gtifh,ProjNatOriginLongGeoKey,&stdlon,0,1);
+  //fprintf(stdout,"stdlon=%G\n",stdlon);
   idx.stdlon=stdlon;
   TIFFGetField(file,GTIFF_PIXELSCALE,&count,&pixelscale);
+  //fprintf(stdout,"dx=%G\n",pixelscale[0]);
+  //fprintf(stdout,"dy=%G\n",pixelscale[1]);
   idx.dx=pixelscale[0];
   idx.dy=pixelscale[1];
-  
+
   /* Fill projection specific parameters. */
-  /* WARNING: This is far from robust and will likely break 
+  /* WARNING: This is far from robust and will likely break
               for certain geotiff files. */
   GTIFKeyGet(gtifh,GTModelTypeGeoKey,&modeltype,0,1);
+  //fprintf(stdout,"modeltype=%hi\n",modeltype);
   projid=gtifp.CTProjection;
+  //fprintf(stdout,"projid=%d\n",projid);
   switch (projid) {
     case CT_AlbersEqualArea:
       idx.proj=albers_nad83;
@@ -116,9 +124,9 @@ GeogridIndex get_index_from_geotiff(
         exit(EXIT_FAILURE);
       }
   }
-  
+
   /* get coordinates of lower left corner */
-  
+
   olon=0;
   olat=0;
   idx.known_x=1;
@@ -128,16 +136,22 @@ GeogridIndex get_index_from_geotiff(
       fprintf(stderr,"WARNING: cannot get coordinates of lower left corner.\n");
       fprintf(stderr,"You will have to edit the index file manually.\n");
     }
+    //fprintf(stdout,"know_lat_0=%5.10G\n",olat);
+    //fprintf(stdout,"know_lon_0=%5.10G\n",olon);
     idx.known_lat=olat;
     idx.known_lon=olon;
-    
+
     olat=1;
     olon=1;
     GTIFImageToPCS(gtifh,&olon,&olat);
+    //fprintf(stdout,"know_lat_1=%5.10G\n",olat);
+    //fprintf(stdout,"know_lon_1=%5.10G\n",olon);
     if(idx.dx <= 0. && idx.dy <= 0) {
       // As a last resort, get dx/dy from projection conversion.
       idx.dx=(float)fabs(olon-(double)idx.known_lon);
       idx.dy=(float)fabs(olat-(double)idx.known_lat);
+      //fprintf(stdout,"dx=%5.10G\n",idx.dx);
+      //fprintf(stdout,"dy=%5.10G\n",idx.dy);
     }
   }
   else {
@@ -148,40 +162,48 @@ GeogridIndex get_index_from_geotiff(
     if (! GTIFProj4ToLatLong(&gtifp,1,&olon,&olat) ) {
       fprintf(stderr,"WARNING: cannot convert from PCS to lat/lon.\n");
     }
+    //fprintf(stdout,"know_lat_0=%5.10G\n",olat);
+    //fprintf(stdout,"know_lon_0=%5.10G\n",olon);
     idx.known_lat=olat;
     idx.known_lon=olon;
-    
+
     olat=1;
     olon=1;
     GTIFImageToPCS(gtifh,&olon,&olat);
     GTIFProj4ToLatLong(&gtifp,1,&olon,&olat);
+    //fprintf(stdout,"know_lat_1=%5.10G\n",olat);
+    //fprintf(stdout,"know_lon_1=%5.10G\n",olon);
     if(idx.dx <= 0. && idx.dy <= 0) {
       // As a last resort, get dx/dy from projection conversion.
       idx.dx=(float)fabs(olon-(double)idx.known_lon);
       idx.dy=(float)fabs(olat-(double)idx.known_lat);
+      //fprintf(stdout,"dx=%5.10G\n",idx.dx);
+      //fprintf(stdout,"dy=%5.10G\n",idx.dy);
     }
   }
-  
+
   /* fill parameters from TIFF i/o */
-  
+
   if( ! TIFFGetField(file,TIFFTAG_IMAGEWIDTH,&inx) ||
       ! TIFFGetField(file,TIFFTAG_IMAGELENGTH,&iny)) {
     fprintf(stderr,"Could not find image dimensions in open file.\n");
     exit(EXIT_FAILURE);
   }
+  //fprintf(stdout,"inx=%d\n",inx);
+  //fprintf(stdout,"iny=%d\n",iny);
   idx.nx=inx;
   idx.ny=iny;
-  
+
   if( TIFFGetField(file,TIFFTAG_IMAGEDEPTH,&inz) ) idx.nz=inz;
   else idx.nz=1;
+  //fprintf(stdout,"inz=%d\n",idx.nz);
   idx.tz_s=0;
   idx.tz_e=idx.tz_s+idx.nz-1;
-  
+
   /* get orientation of the data, defaults to TOPLEFT */
   if ( ! TIFFGetField(file,TIFFTAG_ORIENTATION,&orientation) ) {
     orientation=ORIENTATION_TOPLEFT;
   }
-  
   switch (orientation) {
     case ORIENTATION_TOPLEFT:
       idx.bottom_top=0;
@@ -196,11 +218,11 @@ GeogridIndex get_index_from_geotiff(
       fprintf(stderr,"Unsupported image orientation.\n");
       exit(EXIT_FAILURE);
   }
-  
+
   /* get the data type of the pixels, only supporting b/w images */
-  if( ! TIFFGetField(file,TIFFTAG_SAMPLEFORMAT,&format) ) 
+  if( ! TIFFGetField(file,TIFFTAG_SAMPLEFORMAT,&format) ) {
     format=SAMPLEFORMAT_UINT;
-  
+  }
   switch (format) {
     case SAMPLEFORMAT_UINT:
       idx.isigned=0;
@@ -215,11 +237,11 @@ GeogridIndex get_index_from_geotiff(
       fprintf(stderr,"Unsupport pixel format.\n");
       exit(EXIT_FAILURE);
   }
-  
+
   /* libtiff will always return the buffer in native machine endian */
   if ( IS_BIGENDIAN() ) idx.endian=0;
   else idx.endian=1;
-  
+
   /* free the geotiff handle, and return */
   GTIFFree(gtifh);
   return (idx);
@@ -235,7 +257,7 @@ unsigned char* alloc_buffer(tsize_t n) {
 }
 
 void free_buffer( unsigned char *buf ) {
-  /* Use the libtiff macro for deallocating an array. 
+  /* Use the libtiff macro for deallocating an array.
      Typically, this is just a call to free. */
   _TIFFfree( (tdata_t) buf );
 }
@@ -243,13 +265,13 @@ void free_buffer( unsigned char *buf ) {
 float* get_tiff_buffer(
   TIFF *file   /* handle to an open tiff file */
                        ) {
-  /* Read tiff file into a buffer cast as float. 
+  /* Read tiff file into a buffer cast as float.
      Allocates the buffer, should be freed by caller after use. */
   uint32 inx,iny,inz;
   tsize_t buffersize;
   uint32 tileWidth, tileLength;
   uint16 bits_per_sample,samples_per_pixel,sample_format,/*fill_order,*/bytes_per_sample;
-  long unsigned int stripMax,stripCount,i,j,k,i0,j0,j1,i1,cc,idx;
+  long unsigned int stripMax,stripCount,i,j,k,i0,j0,j1,i1,cc,idx,kk;
   tsize_t stripSize;
   unsigned long imageOffset,result;
   unsigned char *buffer;
@@ -262,7 +284,9 @@ float* get_tiff_buffer(
   int32 itemp32;
   double dtemp;
   unsigned char *tilebuf,*tptr,*bptr;
-  
+
+  kk=0;
+
   /* get the global dimensions of the image */
   if( ! TIFFGetField(file,TIFFTAG_IMAGEWIDTH,&inx) ||
       ! TIFFGetField(file,TIFFTAG_IMAGELENGTH,&iny)) {
@@ -270,13 +294,13 @@ float* get_tiff_buffer(
     exit(EXIT_FAILURE);
   }
   if( ! TIFFGetField(file,TIFFTAG_IMAGEDEPTH,&inz) ) inz=1;
-  
+
   /* get the number of bits in a pixel, determines how to cast to output */
   if( ! TIFFGetField(file,TIFFTAG_BITSPERSAMPLE,&bits_per_sample) ) {
     fprintf(stderr,"Could not find TIFFTAG_BITSPERSAMPLE.\n");
     exit(EXIT_FAILURE);
   }
-  
+
   /* only 1,2, and 4 byte are supported for now */
   switch (bits_per_sample) {
     case 8:
@@ -292,7 +316,7 @@ float* get_tiff_buffer(
       fprintf(stderr,"Unsupport bits_per_sample=%i.\n",bits_per_sample);
       exit(EXIT_FAILURE);
   }
-  
+
   /* we only support scalar valued data (no color images) */
   if( ! TIFFGetField(file,TIFFTAG_SAMPLESPERPIXEL,&samples_per_pixel) ) {
     fprintf(stderr,"Could not find TIFFTAG_SAMPLESPERPIXEL.\n");
@@ -302,13 +326,13 @@ float* get_tiff_buffer(
     fprintf(stderr,"Currently only single channel images (black and white) are supported.\n");
     exit(EXIT_FAILURE);
   }
-  if( ! TIFFGetField(file,TIFFTAG_SAMPLEFORMAT,&sample_format) ) 
+  if( ! TIFFGetField(file,TIFFTAG_SAMPLEFORMAT,&sample_format) )
     sample_format=SAMPLEFORMAT_UINT;
-  
-  /* This next bit was supposed to check bit ordering, but most files 
+
+  /* This next bit was supposed to check bit ordering, but most files
      don't seem to contain the information. TIFF should do the conversion anyway. */
   /*
-  if( ! TIFFGetField(file,TIFFTAG_FILLORDER,&fill_order) 
+  if( ! TIFFGetField(file,TIFFTAG_FILLORDER,&fill_order)
      || fill_order != FILLORDER_MSB2LSB) {
     fprintf(stderr,"Undefined or unsupported bit order.\n");
     exit(EXIT_FAILURE);
@@ -319,18 +343,21 @@ float* get_tiff_buffer(
     buffersize=((size_t) inx)*((size_t) iny)*((size_t) inz)*((size_t) samples_per_pixel)*((size_t) bytes_per_sample);
     buffer=alloc_buffer(buffersize);
 
- 
+
   /* tiff images can be tiled or striped, we handle each seperately. */
   if ( TIFFIsTiled(file) ) {
     /* set up a buffer for reading each tile, this is copied to the global buffer */
     tilebuf = _TIFFmalloc(TIFFTileSize(file));
-    
+
     /* get the tile dimensions in bytes */
     TIFFGetField(file, TIFFTAG_TILEWIDTH, &tileWidth);
     TIFFGetField(file, TIFFTAG_TILELENGTH, &tileLength);
- 
-     for(i=0;i<buffersize;i++) buffer[i]=2;
-  
+    //fprintf(stdout,"bytes_per_sample=%d\n",bytes_per_sample);
+    //fprintf(stdout,"tileWidth=%d\n",tileWidth);
+    //fprintf(stdout,"tileLength=%d\n",tileLength);
+    //fprintf(stdout,"buffersize=%ld\n",buffersize);
+    for(i=0;i<buffersize;i++) buffer[i]=2;
+
     for(k=0;k<inz;k++) {                    /* loop over vertical levels */
       for(j=0;j<iny;j += tileLength) {      /* loop over columns of tiles */
         for(i=0;i<inx;i += tileWidth) {     /* loop over rows of tiles */
@@ -341,35 +368,36 @@ float* get_tiff_buffer(
             fprintf(stderr, "Read error on input tile number %lu,%lu\n", i,j);
             exit(EXIT_FAILURE);
           }
-          
+
           /* copy tile into global buffer */
           cc=0;
           tptr=tilebuf;
           for(j0=0;j0<tileLength;j0++) {  /* loop over columns in the tile */
             j1=j0+j;
             i1=i;
-            
+
             /* here we set a pointer to the first element of current column in the current tile. */
-	    idx=k*inx*iny+j1*inx+i1;
-	    if(idx < inx*iny*inz) {
-            bptr=( buffer + (k*inx*iny+j1*inx+i1)*bytes_per_sample);
-            //fprintf(stdout,"%i\n",k*inx*bytes_per_sample*iny*bytes_per_sample+j1*inx*bytes_per_sample+i1);
-            for(i0=0;i0<tileWidth*bytes_per_sample;i0++) {
-	      //fprintf(stdout,"%i ",*(unsigned char*)tptr);
-              *bptr++=*tptr++;
-              cc++;  /* keep track of number of bytes copied to compare to what was read from TIFFReadTile */
-            } /* i0 */
-	    }
-	    //fprintf(stdout,"\n");
+	          idx=k*inx*iny+j1*inx+i1;
+	          if(idx < inx*iny*inz) {
+              bptr=( buffer + (k*inx*iny+j1*inx+i1)*bytes_per_sample);
+              //fprintf(stdout,"%lu\n",k*inx*iny*bytes_per_sample+j1*inx*bytes_per_sample+i1);
+              for(i0=0;i0<tileWidth*bytes_per_sample;i0++) {
+                //fprintf(stdout,"%i ",*(unsigned char*)tptr);
+                *bptr++=*tptr++;
+                cc++;  /* keep track of number of bytes copied to compare to what was read from TIFFReadTile */
+              } /* i0 */
+            }
+            //fprintf(stdout,"\n");
           } /* j0 */
           /* sanity check my programming skills */
-          //if (cc > result) {  /* this might be possible for imcomplete tiles */
-          //  fprintf(stderr,"WARNING: Tile size=%i < copy size=%i.  This could indicate a bug.\n",(int)result,(int)cc);
+          // if (cc > result) {  /* this might be possible for imcomplete tiles */
+          //  fprintf(stderr,"WARNING copying tile number %lu,%lu: Tile size=%i < copy size=%i.  This could indicate a bug.\n",i,j,(int)result,(int)cc);
           //}
           //if (cc < result) { /* this is almost certainly a bug */
-          //  fprintf(stderr,"ERROR: Tile size=%i > copy size=%i!\n",(int)result,(int)cc); 
-          // }
-          
+          //  kk++;
+          //  fprintf(stderr,"ERROR copying tile number %lu,%lu: Tile size=%i > copy size=%i!\n",i,j,(int)result,(int)cc);
+          //}
+
         } /* i */
       } /* j */
     } /* k */
@@ -387,11 +415,12 @@ float* get_tiff_buffer(
         fprintf(stderr, "Read error on input strip number %lu\n", stripCount);
         exit(EXIT_FAILURE);
       }
-      
+
       imageOffset += result;
     }
   }
-  
+  //fprintf(stdout,"#ERRORs=%i\n",(int)kk);
+
   /* convert image buffer into float */
   switch (sample_format) {
     case SAMPLEFORMAT_UINT:
@@ -444,6 +473,6 @@ float* get_tiff_buffer(
       fprintf(stderr,"Unsupported data type in image.\n");
       exit(EXIT_FAILURE);
   }
-  
+
   return bufferasfloat;
 }
