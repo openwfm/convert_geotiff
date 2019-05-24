@@ -257,9 +257,11 @@ float* get_tiff_buffer(
   uint8 iutemp8;
   uint16 iutemp16;
   uint32 iutemp32;
+  uint64 iutemp64;
   int8 itemp8;
   int16 itemp16;
   int32 itemp32;
+  int64 itemp64;
   double dtemp;
   unsigned char *tilebuf,*tptr,*bptr;
   
@@ -287,6 +289,9 @@ float* get_tiff_buffer(
       break;
     case 32:
       bytes_per_sample=4;
+      break;
+    case 64:
+      bytes_per_sample=8;
       break;
     default:
       fprintf(stderr,"Unsupport bits_per_sample=%i.\n",bits_per_sample);
@@ -405,6 +410,9 @@ float* get_tiff_buffer(
         case 4:
           CONV_CHAR_BUFFER_TO(uint32,iutemp32)
           break;
+        case 8:
+          CONV_CHAR_BUFFER_TO(uint64,iutemp64)
+          break;
         default:
           fprintf(stderr,"Unsupported bytes per sample=%i for uint.\n",bytes_per_sample);
           exit(EXIT_FAILURE);
@@ -420,6 +428,9 @@ float* get_tiff_buffer(
           break;
         case 4:
           CONV_CHAR_BUFFER_TO(int32,itemp32)
+          break;
+        case 8:
+          CONV_CHAR_BUFFER_TO(int64,itemp64)
           break;
         default:
           fprintf(stderr,"Unsupported bytes per sample=%i for int.\n",bytes_per_sample);
