@@ -1,7 +1,7 @@
 # compute coordinates of tif pixel
 # https://stackoverflow.com/questions/50191648/gis-geotiff-gdal-python-how-to-get-coordinates-from-pixel
 
-import gdal,osr
+import gdal,osr,sys
 
 def crs_ref():
         # create lat/long crs with WGS84 datum
@@ -65,9 +65,12 @@ def lonlat2xy(name,lon,lat):
         return x,y
     
 if __name__ == '__main__':
-    name='ned_data.tif'
-    x=100.5
-    y=777.3
+    if len(sys.argv) != 4:
+        print "usage: file.tif x y"
+        sys.exit(1)
+    name = sys.argv[1] 
+    x=float(sys.argv[2])
+    y=float(sys.argv[3])
     lon, lat = xy2lonlat(name,x,y)
     print x,y,lon,lat
     xx,yy = lonlat2xy(name,lon,lat)
