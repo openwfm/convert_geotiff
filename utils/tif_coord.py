@@ -8,6 +8,7 @@ def xy2latlon(name,x,y):
         ds=gdal.Open(name)
     except:
         print "gdal cannot open file %s" % name
+        raise
     finally:
         xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
     
@@ -26,6 +27,15 @@ def xy2latlon(name,x,y):
         # create lat/long crs with WGS84 datum
         crsGeo = osr.SpatialReference()
         crsGeo.ImportFromEPSG(4326) # 4326 is the EPSG id of lat/long crs 
+        # same as PROJ.4 : +proj=longlat +datum=WGS84 +no_defs
+        # test with gdalsrsinfo epsg:4326
         t = osr.CoordinateTransformation(crs, crsGeo)
-        (long, lat, z) = t.TransformPoint(posX, posY)
-        return lat, long, z
+        (lat, lon, z) = t.TransformPoint(posX, posY)
+        return lon, lat, z
+
+if __name__ == '__main__':
+    name='ned_data.tif'
+    x=0
+    y=0
+    lon, lat, z = xy2latlon(name,x,y)
+    print lon,lat
