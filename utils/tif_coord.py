@@ -19,12 +19,7 @@ def crs_ds(ds):
         return crs
 
 def xy2lonlat(name,x,y):
-    try:
         ds=gdal.Open(name)
-    except:
-        print "gdal cannot open file %s" % name
-        raise
-    finally:
         xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
     
         # supposing x and y are your pixel coordinate this 
@@ -41,12 +36,7 @@ def xy2lonlat(name,x,y):
         return lon, lat
 
 def lonlat2xy(name,lon,lat):
-    try:
         ds=gdal.Open(name)
-    except:
-        print "gdal cannot open file %s" % name
-        raise
-    finally:
         xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
 
         t = osr.CoordinateTransformation(crs_ref(),crs_ds(ds))
@@ -63,6 +53,13 @@ def lonlat2xy(name,lon,lat):
         y = inverse_gt[3] + inverse_gt[4] * posX + inverse_gt[5] * posY
 
         return x,y
+
+def test_inv(name,x,y):
+    lon, lat = xy2lonlat(name,x,y)
+    print x,y,lon,lat
+    xx,yy = lonlat2xy(name,lon,lat)
+    print xx,yy,lon,lat
+    print "error",xx-x,yy-y
     
 if __name__ == '__main__':
     if len(sys.argv) != 4:
@@ -71,8 +68,5 @@ if __name__ == '__main__':
     name = sys.argv[1] 
     x=float(sys.argv[2])
     y=float(sys.argv[3])
-    lon, lat = xy2lonlat(name,x,y)
-    print x,y,lon,lat
-    xx,yy = lonlat2xy(name,lon,lat)
-    print xx,yy,lon,lat
-    print "error",xx-x,yy-y
+    test_inv(name,x,y)
+
