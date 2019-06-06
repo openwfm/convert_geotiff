@@ -16,8 +16,14 @@ def crs_ref():
 def crs_ds(ds):
         # get CRS from dataset 
         crs = osr.SpatialReference()
-        crs.ImportFromWkt(ds.GetProjectionRef())
+        crs.ImportFromWkt(ds.GetProjectionRef()) # same as GetProjection() ??
         return crs
+
+def proj_ds(name):
+        ds=gdal.Open(name)
+        # get PROJ string of dataset
+        crs = crs_ds(ds)
+        return crs.ExportToProj4()
 
 def xydist(name,x1,y1,x2,y2):
         ds=gdal.Open(name)
@@ -79,16 +85,18 @@ def test_inv(name,x,y):
     print "error",xx-x,yy-y
     
 if __name__ == '__main__':
-    if len(sys.argv) in (4,6,8):
+    if len(sys.argv) in (2,4,6,8):
         name = sys.argv[1] 
-        x1=float(sys.argv[2])
-        y1=float(sys.argv[3])
-        test_inv(name,x1,y1)
+        print proj_ds(name)
     else:
         print "convert pixel indices to lon lat:   file.tif x y"
         print "+ compute grid and geod distance:   file.tif x1 y1 x2 y2"
         print "+ compute Lambert conical distance: file.tif x1 y1 x2 y2 lon_0 lat_0"
         sys.exit(1)
+    if len(sys.argv) in (4,6,8):
+        x1=float(sys.argv[2])
+        y1=float(sys.argv[3])
+        test_inv(name,x1,y1)
     if len(sys.argv) in (6,8):
         x2=float(sys.argv[4])
         y2=float(sys.argv[5])
