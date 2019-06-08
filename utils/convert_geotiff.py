@@ -3,6 +3,9 @@
 import gdal,osr,pyproj,sys
 import numpy as np
 
+# pyproj.transform(ref_proj,p,lon,lat) is the same as p(lon,lat)
+ref_proj = pyproj.Proj(proj='lonlat',ellps='WGS84',no_defs=True)
+
 def get_tif_proj(ds):
     """
     Create projection object of geotiff file
@@ -36,9 +39,17 @@ def pos2pix(ds,posX,posY):
     return x,y
 
 def wrf2pix(ds,wrf_proj,tif_proj,wrf_posX,wrf_posY):
+    print 'WRF position',wrf_posX,wrf_posY
+    lon, lat = pyproj.transform(wrf_proj,ref_proj,wrf_posX,wrf_posY)
+    print 'lon lat',lon,lat
     tif_posX, tif_posY = pyproj.transform(wrf_proj,tif_proj,wrf_posX,wrf_posY)
-    x, y = pos2pix(ds,tif_posX,wrf_posY) 
+    print 'tif position',tif_posX,tif_posY
+    x, y = pos2pix(ds,tif_posX,tif_posY) 
+    print 'pixel coord ',x,y
     print 'wrf_pos',wrf_posX,wrf_posY,'at pixel',x, y 
+    tx, ty = pix2pos(ds,x,y) 
+    print 'err',tif_posX-tx,tif_posY-ty
+    
     return x, y
 
 def get_bbox(name,sizex, sizey, lon_0, lat_0, lat_1, lat_2):
@@ -48,19 +59,19 @@ def get_bbox(name,sizex, sizey, lon_0, lat_0, lat_1, lat_2):
     ds = gdal.Open(name)
     radius = 6370e3
     wrf_proj = pyproj.Proj(proj='lcc',
-            lat_1=lat_0,
-            lat_2=lat_0,
             lat_0=lat_0,
             lon_0=lon_0,
+            lat_1=lat_0,
+            lat_2=lat_0,
             a=radius, b=radius, towgs84='0,0,0', no_defs=True)
     print 'wrf_proj=',wrf_proj.srs
     tif_proj = get_tif_proj(ds)
     print 'tif_proj=',tif_proj.srs
-    ref_proj = pyproj.Proj(proj='lonlat',datum='WGS84',no_defs=True)
     print 'ref_proj=',ref_proj.srs
     # given midpoint to WRF coordinates
     wrf_ctrX, wrf_ctrY = pyproj.transform(ref_proj,wrf_proj,lon_0,lat_0)
     # corners 
+    x_ct, y_ct = wrf2pix(ds,wrf_proj,tif_proj,wrf_ctrX,        wrf_ctrY        )
     x_ll, y_ll = wrf2pix(ds,wrf_proj,tif_proj,wrf_ctrX-sizex/2,wrf_ctrY-sizey/2)
     x_ul, y_ul = wrf2pix(ds,wrf_proj,tif_proj,wrf_ctrX-sizex/2,wrf_ctrY+sizey/2)
     x_lr, y_lr = wrf2pix(ds,wrf_proj,tif_proj,wrf_ctrX+sizex/2,wrf_ctrY-sizey/2)
@@ -69,7 +80,7 @@ def get_bbox(name,sizex, sizey, lon_0, lat_0, lat_1, lat_2):
     x_max = max([x_ll,x_ul,x_lr,x_ur])
     y_min = min([y_ll,y_ul,y_lr,y_ur])
     y_max = max([y_ll,y_ul,y_lr,y_ur])
-    print 'bounding box x',x_min,x_max,'y',y_min,y_max
+    print 'bounding box',x_min,y_min,x_max,y_max
     return x_min,x_max,y_min,y_max
  
 if __name__ == '__main__':

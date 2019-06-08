@@ -5,8 +5,8 @@ import gdal,osr,pyproj,sys
 import numpy as np
 
 def crs_ref():
-        # create lat/long crs with WGS84 datum
-        # same as PROJ.4 : +proj=longlat +datum=WGS84 +no_defs
+        # create lat/long crs with WGS84 
+        # same as PROJ.4 : +proj=longlat +ellps=WGS84 +no_defs
         # test with gdalsrsinfo epsg:4326
         crs = osr.SpatialReference()
         #crs.ImportFromEPSG(4326) # 4326 is the EPSG id of lat/long crs 
@@ -36,13 +36,16 @@ def xy2lcc(name,lon_0,lat_0,x,y):
       print 'lcc:',lcc_proj.srs
       tif_proj = pyproj.Proj(projparams=proj_string(name))
       print 'tif:',tif_proj.srs
-      ref_proj = pyproj.Proj(proj='lonlat',datum='WGS84',no_defs=True)
+      ref_proj = pyproj.Proj(proj='lonlat',ellps='WGS84',no_defs=True)
       print 'ref:',ref_proj.srs 
 
       ds=gdal.Open(name)
       xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
       posX = px_w * x + rot1 * y + xoffset
       posY = rot2 * x + px_h * y + yoffset
+      gX, gY = gdal.ApplyGeoTransform(ds.GetGeoTransform(),x,y)
+      print posX, posY
+      print gX, gY
       posX += px_w / 2.0
       posY += px_h / 2.0
 
