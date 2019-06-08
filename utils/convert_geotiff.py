@@ -97,21 +97,22 @@ def extract(ds,outputName,bbox):
     return ds
  
 if __name__ == '__main__':
-    if len(sys.argv) in (6,8):
-        name = sys.argv[1] 
-        sizex= float(sys.argv[2])
-        sizey= float(sys.argv[3])
-        lon_0= float(sys.argv[4])
-        lat_0= float(sys.argv[5])
+    if len(sys.argv) in (7,9):
+        input_name = sys.argv[1] 
+        output_name = sys.argv[2]
+        sizex= float(sys.argv[3])
+        sizey= float(sys.argv[4])
+        lon_0= float(sys.argv[5])
+        lat_0= float(sys.argv[6])
     else:
-        print 'usage: python convert_geotif.py file_tif sizex sizey lon_0 lat_0 [lat_1 lat_2]'
+        print 'usage: python subset_geotif.py input.tif output.tif sizex_m sizey_m lon_0 lat_0 [lat_1 lat_2]'
         sys.exit(1)
-    if len(sys.argv) in (8,):
-        lat_1= float(sys.argv[6])
-        lat_2= float(sys.argv[7])
+    if len(sys.argv) in (9,):
+        lat_1= float(sys.argv[7])
+        lat_2= float(sys.argv[8])
     else:
         lat_1, lat_2 = lat_0, lat_0
-    ds = gdal.Open(name)
+    ds = gdal.Open(input_name)
     bbox=get_bbox(ds,sizex, sizey, lon_0, lat_0, lat_1, lat_2)
-    extract(ds,'test.tif',bbox)
+    extract(ds,output_name,bbox)
 

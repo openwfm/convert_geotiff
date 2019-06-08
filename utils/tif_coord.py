@@ -148,6 +148,7 @@ if __name__ == '__main__':
         geod = pyproj.Geod(ellps='WGS84')
         print 'lon1, lat1, lon2, lat2',lon1, lat1, lon2, lat2
         print 'diff lon lat',lon2-lon1,lat2-lat1
+        print 'midpoint lon lat',(lon2+lon1)*0.5,(lat2+lat1)*0.5
         try:
             azimuth1, azimuth2, distance = geod.inv(lon1, lat1, lon2, lat2)
             print 'geod distance', distance
