@@ -146,9 +146,14 @@ if __name__ == '__main__':
         lon1, lat1 = xy2lonlat(name,x1,y1)
         lon2, lat2 = xy2lonlat(name,x2,y2)
         geod = pyproj.Geod(ellps='WGS84')
-        azimuth1, azimuth2, distance = geod.inv(lon1, lat1, lon2, lat2)
-        print 'geod distance', distance
-        print 'azimuth', azimuth1, azimuth2
+        print 'lon1, lat1, lon2, lat2',lon1, lat1, lon2, lat2
+        print 'diff lon lat',lon2-lon1,lat2-lat1
+        try:
+            azimuth1, azimuth2, distance = geod.inv(lon1, lat1, lon2, lat2)
+            print 'geod distance', distance
+            print 'azimuth', azimuth1, azimuth2
+        except ValueError as e:
+            print e
     if len(sys.argv) in (8,):
         lon_0=float(sys.argv[6])
         lat_0=float(sys.argv[7])
