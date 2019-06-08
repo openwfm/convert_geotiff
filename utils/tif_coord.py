@@ -19,11 +19,49 @@ def crs_ds(ds):
         crs.ImportFromWkt(ds.GetProjectionRef()) # same as GetProjection() ??
         return crs
 
-def proj_ds(name):
+def proj_string(name):
         ds=gdal.Open(name)
         # get PROJ string of dataset
         crs = crs_ds(ds)
         return crs.ExportToProj4()
+
+def xy2lcc(name,lon_0,lat_0,x,y):
+      radius = 6370e3
+      lcc_proj = pyproj.Proj(proj='lcc',
+            lat_1=lat_0,
+            lat_2=lat_0,
+            lat_0=lat_0,
+            lon_0=lon_0,
+            a=radius, b=radius, towgs84='0,0,0', no_defs=True)
+      print 'lcc:',lcc_proj.srs
+      tif_proj = pyproj.Proj(projparams=proj_string(name))
+      print 'tif:',tif_proj.srs
+      ref_proj = pyproj.Proj(proj='lonlat',datum='WGS84',no_defs=True)
+      print 'ref:',ref_proj.srs 
+
+      ds=gdal.Open(name)
+      xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
+      posX = px_w * x + rot1 * y + xoffset
+      posY = rot2 * x + px_h * y + yoffset
+      posX += px_w / 2.0
+      posY += px_h / 2.0
+
+      print 'tif:', posX, posY 
+      lon, lat = pyproj.transform(tif_proj, ref_proj, posX, posY)
+      print "ref lon lat:", lon, lat
+      lccX, lccY = pyproj.transform(ref_proj,lcc_proj,lon, lat)
+      print "lcc x y:", lccX, lccY
+      lcc3X, lcc3Y = lcc_proj(lon, lat)
+      print "lcc3 x y:", lcc3X, lcc3Y
+      lcc2X, lcc2Y = pyproj.transform(tif_proj, lcc_proj, posX, posY)
+      print "lcc2 x y:", lcc2X, lcc2Y
+      #return lccX, lccY
+      return lcc2X, lcc2Y
+
+def lccdist(name,lon_0,lat_0,x1,y1,x2,y2):
+        lccX1, lccY1 = xy2lcc(name,lon_0,lat_0,x1,y1)
+        lccX2, lccY2 = xy2lcc(name,lon_0,lat_0,x2,y2)
+        return np.sqrt((lccX1-lccX2)**2+(lccY1-lccY2)**2)
 
 def xydist(name,x1,y1,x2,y2):
         ds=gdal.Open(name)
@@ -87,7 +125,7 @@ def test_inv(name,x,y):
 if __name__ == '__main__':
     if len(sys.argv) in (2,4,6,8):
         name = sys.argv[1] 
-        print proj_ds(name)
+        print proj_string(name)
     else:
         print "convert pixel indices to lon lat:   file.tif x y"
         print "+ compute grid and geod distance:   file.tif x1 y1 x2 y2"
@@ -112,7 +150,6 @@ if __name__ == '__main__':
         lon_0=float(sys.argv[6])
         lat_0=float(sys.argv[7])
         print 'reference lon %s lat %s' % (lon_0,lat_0)
-        print "Lambert conical distance not supported yet"
-        sys.exit(1)
-
+        lccd = lccdist(name,lon_0,lat_0,x1,y1,x2,y2)
+        print 'LCC distance ',lccd
 
