@@ -93,8 +93,8 @@ def extract(ds,outputName,bbox):
     srcWin = [x_min, y_max, x_max-x_min+1, y_max-y_min+1]
     print 'extracting from', ' '.join(ds.GetFileList()), 'to', outputName
     print 'left_x, top_y, width, height =',srcWin
-    ds=gdal.Translate(outputName, ds, srcWin = srcWin)
-    return ds
+    gdal.Translate(outputName, ds, srcWin = srcWin)
+    return srcWin 
  
 if __name__ == '__main__':
     if len(sys.argv) in (7,9):
@@ -114,5 +114,21 @@ if __name__ == '__main__':
         lat_1, lat_2 = lat_0, lat_0
     ds = gdal.Open(input_name)
     bbox=get_bbox(ds,sizex, sizey, lon_0, lat_0, lat_1, lat_2)
-    extract(ds,output_name,bbox)
+    srcWin = extract(ds,output_name,bbox)
+    import tif_coord
+    print 'checking sides'
+    x_min, y_max, x_size, y_size = srcWin 
+    #tif_coord.lccdist(output_name,lon_0,lat_0,x_size,y_size, x_size,y_size)
+    print 'left'
+    lccd=tif_coord.lccdist(output_name,lon_0,lat_0,1.0   ,1.0   , 1.0   ,y_size)
+    print 'LCC distance',lccd
+    print 'bottom'
+    lccd=tif_coord.lccdist(output_name,lon_0,lat_0,1.0   ,1.0   , x_size,1.0   )
+    print 'LCC distance',lccd
+    print 'top'
+    lccd=tif_coord.lccdist(output_name,lon_0,lat_0,1.0   ,y_size, x_size,y_size)
+    print 'LCC distance',lccd
+    print 'right'
+    lccd=tif_coord.lccdist(output_name,lon_0,lat_0,x_size,1.0   , x_size,y_size)
+    print 'LCC distance',lccd
 
