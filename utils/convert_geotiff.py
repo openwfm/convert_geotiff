@@ -1,144 +1,85 @@
 # compute coordinates of tif pixel
-# https://stackoverflow.com/questions/50191648/gis-geotiff-gdal-python-how-to-get-coordinates-from-pixel
 
 import gdal,osr,pyproj,sys
 import numpy as np
 
-def crs_ref():
-        # create lat/long crs with WGS84 datum
-        # same as PROJ.4 : +proj=longlat +datum=WGS84 +no_defs
-        # test with gdalsrsinfo epsg:4326
-        crs = osr.SpatialReference()
-        #crs.ImportFromEPSG(4326) # 4326 is the EPSG id of lat/long crs 
-        crs.SetWellKnownGeogCS('WGS84')
-        return crs
+def get_tif_proj(ds):
+    """
+    Create projection object of geotiff file
+    """
+    crs = osr.SpatialReference()
+    crs.ImportFromWkt(ds.GetProjectionRef())
+    proj = pyproj.Proj(projparams=crs.ExportToProj4())
+    return proj
 
-def crs_ds(ds):
-        # get CRS from dataset 
-        crs = osr.SpatialReference()
-        crs.ImportFromWkt(ds.GetProjectionRef()) # same as GetProjection() ??
-        return crs
+def pix2pos(ds,x,y):
+    """
+    Compute position coordinates from geotiff pixel indices
+    """
+    gt = ds.GetGeoTransform()
+    xoffset, px_w, rot1, yoffset, rot2, px_h = gt
+    posX, posY = gdal.ApplyGeoTransform(gt, x, y)
+    posX += px_w / 2.0
+    posY += px_h / 2.0
+    return posX, posY
 
-def proj_string(name):
-        ds=gdal.Open(name)
-        # get PROJ string of dataset
-        crs = crs_ds(ds)
-        return crs.ExportToProj4()
+def pos2pix(ds,posX,posY):
+    """
+    Compute geotiff pixel indices from position coordinates 
+    """
+    gt = ds.GetGeoTransform()
+    xoffset, px_w, rot1, yoffset, rot2, px_h = gt
+    posX -= px_w / 2.0
+    posY -= px_h / 2.0
+    inverse_gt = gdal.InvGeoTransform(gt)
+    x, y = gdal.ApplyGeoTransform(inverse_gt, posX, posY)
+    return x,y
 
-def xy2lcc(name,lon_0,lat_0,x,y):
-      radius = 6370e3
-      lcc_proj = pyproj.Proj(proj='lcc',
+def wrf2pix(ds,wrf_proj,wrf_posX,wrf_posY):
+    tif_proj = get_tif_proj(ds)
+    tif_posX, tif_posY = pyproj.transform(wrf_proj,tif_proj,wrf_posX,wrf_posY)
+    x, y = pos2pix(ds,tif_posX,wrf_posY) 
+    
+
+def get_bbox(name,sizex, sizey, lon_0, lat_0, lat_1, lat_2)
+    gs = gdal.Open(name)
+    radius = 6370e3
+    wrf_proj = pyproj.Proj(proj='lcc',
             lat_1=lat_0,
             lat_2=lat_0,
             lat_0=lat_0,
             lon_0=lon_0,
             a=radius, b=radius, towgs84='0,0,0', no_defs=True)
-      print 'lcc:',lcc_proj.srs
-      tif_proj = pyproj.Proj(projparams=proj_string(name))
-      print 'tif:',tif_proj.srs
-      ref_proj = pyproj.Proj(proj='lonlat',datum='WGS84',no_defs=True)
-      print 'ref:',ref_proj.srs 
-
-      ds=gdal.Open(name)
-      xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
-      posX = px_w * x + rot1 * y + xoffset
-      posY = rot2 * x + px_h * y + yoffset
-      posX += px_w / 2.0
-      posY += px_h / 2.0
-
-      print 'tif:', posX, posY 
-      lon, lat = pyproj.transform(tif_proj, ref_proj, posX, posY)
-      print "ref lon lat:", lon, lat
-      lccX, lccY = pyproj.transform(ref_proj,lcc_proj,lon, lat)
-      print "lcc x y:", lccX, lccY
-      lcc3X, lcc3Y = lcc_proj(lon, lat)
-      print "lcc3 x y:", lcc3X, lcc3Y
-      lcc2X, lcc2Y = pyproj.transform(tif_proj, lcc_proj, posX, posY)
-      print "lcc2 x y:", lcc2X, lcc2Y
-      #return lccX, lccY
-      return lcc2X, lcc2Y
-
-def lccdist(name,lon_0,lat_0,x1,y1,x2,y2):
-        lccX1, lccY1 = xy2lcc(name,lon_0,lat_0,x1,y1)
-        lccX2, lccY2 = xy2lcc(name,lon_0,lat_0,x2,y2)
-        return np.sqrt((lccX1-lccX2)**2+(lccY1-lccY2)**2)
-
-def xydist(name,x1,y1,x2,y2):
-        ds=gdal.Open(name)
-        xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
+    tif_proj = get_tif_proj(ds)
+    ref_proj = pyproj.Proj(proj='lonlat',datum='WGS84',no_defs=True)
+    # given midpoint to WRF coordinates
+    ctrX_wrf, ctrY_wrf = pyproj.transform(ref_proj,wrf_proj,lon_0,lat_0)
+    # corners 
+    tif_posX_ll, tif_posY_ll = pyproj.transform(wrf_proj,tif_proj,wrf_posX-sizex/2,wrf_posY-sizey/2)
+    tif_posX_ul, tif_posY_ul = pyproj.transform(wrf_proj,tif_proj,wrf_posX-sizex/2,wrf_posY+sizey/2)
+    tif_posX_lr, tif_posY_lr = pyproj.transform(wrf_proj,tif_proj,wrf_posX+sizex/2,wrf_posY-sizey/2)
+    tif_posX_ur, tif_posY_ur = pyproj.transform(wrf_proj,tif_proj,wrf_posX+sizex/2,wrf_posY+sizey/2)
+    tif_posX_min = min([tif_posX_ll,tif_posX_ul,tif_posX_lr,tif_posX_ur])
+    tif_posX_max = max([tif_posX_ll,tif_posX_ul,tif_posX_lr,tif_posX_ur])
     
-        # supposing x and y are your pixel coordinate this 
-        # is how to get the coordinate in space.
-        posX1 = px_w * x1 + rot1 * y1 + xoffset
-        posY1 = rot2 * x1 + px_h * y1 + yoffset
-        posX2 = px_w * x2 + rot1 * y2 + xoffset
-        posY2 = rot2 * x2 + px_h * y2 + yoffset
-    
-        return np.sqrt((posX1-posX2)**2+(posY1-posY2)**2)
 
-def xy2lonlat(name,x,y):
-        ds=gdal.Open(name)
-        xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
-    
-        # supposing x and y are your pixel coordinate this 
-        # is how to get the coordinate in space.
-        posX = px_w * x + rot1 * y + xoffset
-        posY = rot2 * x + px_h * y + yoffset
-    
-        # shift to the center of the pixel
-        posX += px_w / 2.0
-        posY += px_h / 2.0
-
-        t = osr.CoordinateTransformation(crs_ds(ds), crs_ref())
-        lat, lon, z = t.TransformPoint(posX, posY)
-        return lon, lat
-
-def lonlat2xy(name,lon,lat):
-        ds=gdal.Open(name)
-	xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
-        
-        print 'xoff, dx, rot1, yoff, dy, rot2',xoffset, px_w, rot1, yoffset, px_h, rot2
-
-        t = osr.CoordinateTransformation(crs_ref(),crs_ds(ds))
-        posX, posY, z  = t.TransformPoint(lat,lon,0)
-
-        posX -= px_w / 2.0
-        posY -= px_h / 2.0
-
-        transform = ds.GetGeoTransform()
-        gt = [transform[0],transform[1],0,transform[3],0,transform[5]]
-        inverse_gt = gdal.InvGeoTransform(gt)
-  
-        x = inverse_gt[0] + inverse_gt[1] * posX + inverse_gt[2] * posY
-        y = inverse_gt[3] + inverse_gt[4] * posX + inverse_gt[5] * posY
-
-        return x,y
-
-def test_inv(name,x,y):
-    print "converting to WGS84 lon lat and back"
-    lon, lat = xy2lonlat(name,x,y)
-    print 'pixel',x,y,'lon lat',lon,lat
-    xx,yy = lonlat2xy(name,lon,lat)
-    # print 'pixel',xx,yy,'lon lat',lon,lat
-    print "error",xx-x,yy-y
-    
 if __name__ == '__main__':
-    if len(sys.argv) in (2,4,6,8):
+    if len(sys.argv) in (4,6):
         name = sys.argv[1] 
-        print proj_string(name)
-    else:
-        print "convert pixel indices to lon lat:   file.tif x y"
-        print "+ compute grid and geod distance:   file.tif x1 y1 x2 y2"
-        print "+ compute Lambert conical distance: file.tif x1 y1 x2 y2 lon_0 lat_0"
+        xsize= sys.argv[2]
+        ysize= sys.argv[3]
+        lon_0= sys.argv[4]
+        lat_0= sys.argv[5]
+    else 
+        usage: python convert_geotif.py xsize ysize lon_0 lat_0 lat_1 lat_2
         sys.exit(1)
-    if len(sys.argv) in (4,6,8):
-        x1=float(sys.argv[2])
-        y1=float(sys.argv[3])
-        test_inv(name,x1,y1)
-    if len(sys.argv) in (6,8):
-        x2=float(sys.argv[4])
-        y2=float(sys.argv[5])
-        test_inv(name,x2,y2)
+    if len(sys.argv) in (6,):
+        lat_1= sys.argv[6]
+        lat_2= sys.argv[7]
+    else
+        lat_1, lat_2 = lat_0, lat_0
+
+
         print 'grid distance',xydist(name,x1,y1,x2,y2)
         lon1, lat1 = xy2lonlat(name,x1,y1)
         lon2, lat2 = xy2lonlat(name,x2,y2)
