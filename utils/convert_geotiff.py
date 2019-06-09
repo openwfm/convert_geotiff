@@ -4,8 +4,10 @@ import gdal,osr,pyproj,sys
 import numpy as np
 from math import floor,ceil
 
-# pyproj.transform(ref_proj,p,lon,lat) is the same as p(lon,lat)
-ref_proj = pyproj.Proj(proj='lonlat',ellps='WGS84',no_defs=True)
+# pyproj.transform(ref_proj,p,lon,lat) should be the same as p(lon,lat)
+# ref_proj = pyproj.Proj(proj='lonlat',ellps='WGS84',datum='WGS84',no_defs=True)
+ref_proj = pyproj.Proj(proj='lonlat')
+# ref_proj = pyproj.Proj(init="epsg:4326")
 
 def get_tif_proj(ds):
     """
@@ -40,42 +42,63 @@ def pos2pix(ds,posX,posY):
     return x,y
 
 def wrf2pix(ds,wrf_proj,tif_proj,wrf_posX,wrf_posY):
-    print 'WRF position',wrf_posX,wrf_posY
+    # *********************************************************************************
+    # IMPORTANT NOTE: have to transform through ref_proj otherwise resulting cutout has
+    # wrong coordinates according to gdalinfo. Not sure why.
+    # Apparently pyproj.transform is not transitive? 
+    # *********************************************************************************
+
+    print 'WRF position',wrf_posX,wrf_posY 
     lon, lat = pyproj.transform(wrf_proj,ref_proj,wrf_posX,wrf_posY)
-    print 'lon lat',lon,lat
-    tif_posX, tif_posY = pyproj.transform(wrf_proj,tif_proj,wrf_posX,wrf_posY)
+    print 'lon lat',lon,lat,deg2str(lon,0),deg2str(lat,1)
+    tif_posX, tif_posY = pyproj.transform(ref_proj,tif_proj,lon,lat)
     print 'tif position',tif_posX,tif_posY
     x, y = pos2pix(ds,tif_posX,tif_posY) 
-    print 'pixel coord ',x,y
-    print 'wrf_pos',wrf_posX,wrf_posY,'at pixel',x, y 
+    print 'pixel coord',x,y
     tx, ty = pix2pos(ds,x,y) 
-    print 'err',tif_posX-tx,tif_posY-ty
-    
+    if abs(tif_posX-tx)>1e-8 or abs(tif_posY-ty)>1e-8 :
+        print 'err',tif_posX-tx,tif_posY-ty
+    lon, lat = pyproj.transform(tif_proj, ref_proj, tif_posX, tif_posY)
+    print 'lon lat',lon,lat,deg2str(lon,0),deg2str(lat,1)
     return x, y
+
+def deg2str(deg,islat):
+      # convert decimal degrees to degress minutes seconds.xx E/W/S/N string
+      deg = round(deg*3600.0,4)/3600.0
+      d = int(deg)
+      m = int((deg - d) * 60)
+      s = (deg - d - m/60.0) * 3600.00
+      z= round(s, 2)
+      NSEW = [['E', 'W'], ['N', 'S']]
+      return '%3.0fd%2.0fm%7.4fs%s' %   (abs(d), abs(m), abs(z),NSEW[islat][d<0])
+
 
 def get_bbox(ds,sizex, sizey, lon_0, lat_0, lat_1, lat_2):
     print 'geotiff file ', ' '.join(ds.GetFileList())
-    print 'cutout size',sizex,sizey,'m','center lon lat',lon_0, lat_0
-    print 'truelats',lat_1, lat_2
+    print 'cutout size',sizex,sizey,'m','center lon lat',lon_0, lat_0,'in the projection used by WRF, centered at ',lon_0, lat_0
     radius = 6370e3
     wrf_proj = pyproj.Proj(proj='lcc',
-            lat_0=lat_0,
             lon_0=lon_0,
+            lat_0=lat_0,
             lat_1=lat_1,
             lat_2=lat_2,
-            a=radius, b=radius, towgs84='0,0,0', no_defs=True)
-    print 'wrf_proj=',wrf_proj.srs
+            a=radius, b=radius, no_defs=True)
+            # a=radius, b=radius, towgs84='0,0,0', no_defs=True)
     tif_proj = get_tif_proj(ds)
+    print 'wrf_proj=',wrf_proj.srs
     print 'tif_proj=',tif_proj.srs
     print 'ref_proj=',ref_proj.srs
     # given midpoint to WRF coordinates
     wrf_ctrX, wrf_ctrY = pyproj.transform(ref_proj,wrf_proj,lon_0,lat_0)
-    # center, for information only
+    print 'center'
     x_ct, y_ct = wrf2pix(ds,wrf_proj,tif_proj,wrf_ctrX,        wrf_ctrY        )
-    # corners 
+    print 'll corner'
     x_ll, y_ll = wrf2pix(ds,wrf_proj,tif_proj,wrf_ctrX-sizex/2,wrf_ctrY-sizey/2)
+    print 'ul corner'
     x_ul, y_ul = wrf2pix(ds,wrf_proj,tif_proj,wrf_ctrX-sizex/2,wrf_ctrY+sizey/2)
+    print 'lr corner'
     x_lr, y_lr = wrf2pix(ds,wrf_proj,tif_proj,wrf_ctrX+sizex/2,wrf_ctrY-sizey/2)
+    print 'ur corner'
     x_ur, y_ur = wrf2pix(ds,wrf_proj,tif_proj,wrf_ctrX+sizex/2,wrf_ctrY+sizey/2)
     x_min = min([x_ll,x_ul,x_lr,x_ur])
     x_max = max([x_ll,x_ul,x_lr,x_ur])
@@ -115,20 +138,32 @@ if __name__ == '__main__':
     ds = gdal.Open(input_name)
     bbox=get_bbox(ds,sizex, sizey, lon_0, lat_0, lat_1, lat_2)
     srcWin = extract(ds,output_name,bbox)
-    import tif_coord
-    print 'checking sides'
+    print 'Done. To verify:'
+    print 'gdalinfo',output_name,'| tail'
+
     x_min, y_max, x_size, y_size = srcWin 
-    #tif_coord.lccdist(output_name,lon_0,lat_0,x_size,y_size, x_size,y_size)
-    print 'left'
-    lccd=tif_coord.lccdist(output_name,lon_0,lat_0,1.0   ,1.0   , 1.0   ,y_size)
-    print 'LCC distance',lccd
-    print 'bottom'
-    lccd=tif_coord.lccdist(output_name,lon_0,lat_0,1.0   ,1.0   , x_size,1.0   )
-    print 'LCC distance',lccd
-    print 'top'
-    lccd=tif_coord.lccdist(output_name,lon_0,lat_0,1.0   ,y_size, x_size,y_size)
-    print 'LCC distance',lccd
-    print 'right'
-    lccd=tif_coord.lccdist(output_name,lon_0,lat_0,x_size,1.0   , x_size,y_size)
-    print 'LCC distance',lccd
+    check_srcwin=0
+    check_srcwin=1
+    if check_srcwin>0:
+        import tif_coord
+        tif_coord.xy2lonlat_print(output_name,1,y_size)
+        tif_coord.xy2lonlat_print(output_name,1,y_size)
+        tif_coord.xy2lonlat_print(output_name,x_size,1)
+        tif_coord.xy2lonlat_print(output_name,x_size,y_size)
+    if check_srcwin>1:
+        print 'checking  approx compatible with gdalinfo'
+        print 'checking sides'
+        #tif_coord.lccdist(output_name,lon_0,lat_0,x_size,y_size, x_size,y_size)
+        print 'left'
+        lccd=tif_coord.lccdist(output_name,lon_0,lat_0,1.0   ,1.0   , 1.0   ,y_size)
+        print 'LCC distance',lccd
+        print 'bottom'
+        lccd=tif_coord.lccdist(output_name,lon_0,lat_0,1.0   ,1.0   , x_size,1.0   )
+        print 'LCC distance',lccd
+        print 'top'
+        lccd=tif_coord.lccdist(output_name,lon_0,lat_0,1.0   ,y_size, x_size,y_size)
+        print 'LCC distance',lccd
+        print 'right'
+        lccd=tif_coord.lccdist(output_name,lon_0,lat_0,x_size,1.0   , x_size,y_size)
+        print 'LCC distance',lccd
 

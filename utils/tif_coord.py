@@ -4,13 +4,16 @@
 import gdal,osr,pyproj,sys
 import numpy as np
 
+ref_proj = pyproj.Proj(proj='lonlat',ellps='WGS84',datum='WGS84',no_defs=True)
+ref_proj = pyproj.Proj(init="epsg:4326")
+
 def crs_ref():
         # create lat/long crs with WGS84 
         # same as PROJ.4 : +proj=longlat +ellps=WGS84 +no_defs
         # test with gdalsrsinfo epsg:4326
         crs = osr.SpatialReference()
-        #crs.ImportFromEPSG(4326) # 4326 is the EPSG id of lat/long crs 
-        crs.SetWellKnownGeogCS('WGS84')
+        crs.ImportFromEPSG(4326) # 4326 is the EPSG id of lat/long crs 
+        #crs.SetWellKnownGeogCS('WGS84')
         return crs
 
 def crs_ds(ds):
@@ -25,6 +28,16 @@ def proj_string(name):
         crs = crs_ds(ds)
         return crs.ExportToProj4()
 
+def deg2str(deg,islat):
+      # convert decimal degrees to degress minutes seconds.xx E/W/S/N string
+      deg = round(deg*3600.0,4)/3600.0
+      d = int(deg)
+      m = int((deg - d) * 60)
+      s = (deg - d - m/60.0) * 3600.00
+      z= round(s, 2)
+      NSEW = [['E', 'W'], ['N', 'S']]
+      return '%3.0fd%2.0fm%7.4fs%s' %   (abs(d), abs(m), abs(z),NSEW[islat][d<0])
+
 def xy2lcc(name,lon_0,lat_0,x,y):
       radius = 6370e3
       lcc_proj = pyproj.Proj(proj='lcc',
@@ -36,7 +49,6 @@ def xy2lcc(name,lon_0,lat_0,x,y):
       print 'lcc:',lcc_proj.srs
       tif_proj = pyproj.Proj(projparams=proj_string(name))
       print 'tif:',tif_proj.srs
-      ref_proj = pyproj.Proj(proj='lonlat',ellps='WGS84',no_defs=True)
       print 'ref:',ref_proj.srs 
 
       ds=gdal.Open(name)
@@ -51,15 +63,14 @@ def xy2lcc(name,lon_0,lat_0,x,y):
 
       print 'tif:', posX, posY 
       lon, lat = pyproj.transform(tif_proj, ref_proj, posX, posY)
-      print "ref lon lat:", lon, lat
+      print "ref lon lat:", lon, lat, deg2str(lon,0), deg2str(lat,1)
       lccX, lccY = pyproj.transform(ref_proj,lcc_proj,lon, lat)
       print "lcc x y:", lccX, lccY
+      lcc2X, lcc2Y = pyproj.transform(tif_proj, lcc_proj, posX, posY) # different result?
+      print "lcc2 x y:", lcc2X, lcc2Y
       lcc3X, lcc3Y = lcc_proj(lon, lat)
       print "lcc3 x y:", lcc3X, lcc3Y
-      lcc2X, lcc2Y = pyproj.transform(tif_proj, lcc_proj, posX, posY)
-      print "lcc2 x y:", lcc2X, lcc2Y
-      #return lccX, lccY
-      return lcc2X, lcc2Y
+      return lccX, lccY
 
 def lccdist(name,lon_0,lat_0,x1,y1,x2,y2):
         lccX1, lccY1 = xy2lcc(name,lon_0,lat_0,x1,y1)
@@ -96,6 +107,10 @@ def xy2lonlat(name,x,y):
         lat, lon, z = t.TransformPoint(posX, posY)
         return lon, lat
 
+def xy2lonlat_print(name,x,y):
+	lon, lat = xy2lonlat(name,x,y)
+        print name,'pixel',x,y,'lon lat',lon,lat,deg2str(lon,0),deg2str(lat,1)
+
 def lonlat2xy(name,lon,lat):
         ds=gdal.Open(name)
 	xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
@@ -120,7 +135,7 @@ def lonlat2xy(name,lon,lat):
 def test_inv(name,x,y):
     print "converting to WGS84 lon lat and back"
     lon, lat = xy2lonlat(name,x,y)
-    print 'pixel',x,y,'lon lat',lon,lat
+    print 'pixel',x,y,'lon lat',lon,lat,deg2str(lon,0),deg2str(lat,1)
     xx,yy = lonlat2xy(name,lon,lat)
     # print 'pixel',xx,yy,'lon lat',lon,lat
     print "error",xx-x,yy-y
