@@ -1,6 +1,6 @@
 # compute coordinates of tif pixel
 
-import gdal,osr,pyproj,sys
+import gdal,os,osr,pyproj,sys
 import numpy as np
 from math import floor,ceil
 
@@ -118,7 +118,26 @@ def extract(ds,outputName,bbox):
     print 'left_x, top_y, width, height =',srcWin
     gdal.Translate(outputName, ds, srcWin = srcWin)
     return srcWin 
- 
+
+def write_geogrid(ds):
+    gdal.Translate('data.bil',ds,format='ENVI')
+    with open('idata.hdr') as fp:
+	line = fp.readline()
+        while line:
+                recol =  re.match(r'samples\s+=\s+([0-9]+)',line)
+                rerow =  re.match(r'lines\s+=\s+([0-9]+)',line)
+                if recol:
+                        ncols = int(recol.groups()[0])
+                if rerow:
+                        nrows = int(rerow.groups()[0])
+                line = fp.readline()
+
+    geogrid_out = '00001-%05d.00001-%05d' % (ncols,nrows)
+    os.rename('data.bil',geogrid_out)
+    os.remove('data.*')
+    print 'geogrid file %s written properly' % geogrid_out
+
+
 if __name__ == '__main__':
     if len(sys.argv) in (7,9):
         input_name = sys.argv[1] 
