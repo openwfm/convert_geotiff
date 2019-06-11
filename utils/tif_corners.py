@@ -10,9 +10,11 @@ def pix2pos(ds,x,y):
     # position coordinates from geotiff pixel indices
     gt = ds.GetGeoTransform()
     xoffset, px_w, rot1, yoffset, rot2, px_h = gt
-    posX, posY = gdal.ApplyGeoTransform(gt, x, y)
-    posX += px_w / 2.0
-    posY += px_h / 2.0
+    posX, posY = gdal.ApplyGeoTransform(gt, x-1, y-1) # corner is (0,0)
+    # move to centers of pixels
+    # commented out, because gdalinfo does not
+    # posX += px_w / 2.0
+    # posY += px_h / 2.0
     return posX, posY
 
 def print_lonlat(ds,tif_proj,ref_proj,x,y):
@@ -22,13 +24,13 @@ def print_lonlat(ds,tif_proj,ref_proj,x,y):
 
 def deg2str(deg,islat):
     # convert decimal degrees to degress minutes seconds.xx E/W/S/N string
-    deg = round(deg*3600.0,4)/3600.0
+    deg = round(deg*3600.0,2)/3600.0
     d = int(deg)
     m = int((deg - d) * 60)
     s = (deg - d - m/60.0) * 3600.00
     z= round(s, 2)
     NSEW = [['E', 'W'], ['N', 'S']]
-    return '%3.0fd%2.0fm%7.4fs%s' %   (abs(d), abs(m), abs(z),NSEW[islat][d<0])
+    return '%3.0fd%2.0fm%5.2fs%s' %   (abs(d), abs(m), abs(z),NSEW[islat][d<0])
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
