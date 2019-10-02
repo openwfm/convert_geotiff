@@ -62,6 +62,9 @@ GeogridIndex get_index_from_geotiff(
   idx.truelat2=stdpar2;
   GTIFKeyGet(gtifh,ProjCenterLongGeoKey,&stdlon,0,1);
   idx.stdlon=stdlon;
+
+  idx.dx = -1;
+  idx.dy = -1;
   TIFFGetField(file,GTIFF_PIXELSCALE,&count,&pixelscale);
   idx.dx=pixelscale[0];
   idx.dy=pixelscale[1];
