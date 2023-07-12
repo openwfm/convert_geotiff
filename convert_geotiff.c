@@ -80,7 +80,7 @@ void print_usage(FILE* f,const char* name) {
 }
 
 int main (int argc, char * argv[]) {
-  
+  tsize_t idx_swp_1, idx_swp_2;
   int c,i,j;
   int categorical_range,border_width,word_size,isigned,tile_size;
   float scale,missing;
@@ -185,7 +185,7 @@ int main (int argc, char * argv[]) {
     print_usage(stderr,argv[0]);
     exit(EXIT_FAILURE);
   }
-  
+
   strcpy(filename,argv[optind]);
   
   /* open geotiff file */
@@ -235,9 +235,11 @@ int main (int argc, char * argv[]) {
   if(!idx.bottom_top) {
     for(i=0;i<idx.ny/2;i++) {
       for(j=0;j<idx.nx;j++) {
-	swp=buffer[i*idx.nx+j];
-	buffer[i*idx.nx+j]=buffer[(idx.ny-i-1)*idx.nx+j];
-	buffer[(idx.ny-i-1)*idx.nx+j]=swp;
+        idx_swp_1 = (tsize_t)i*idx.nx+j;
+        idx_swp_2 = (tsize_t)(idx.ny-i-1)*idx.nx+j;
+        swp=buffer[idx_swp_1];
+        buffer[idx_swp_1]=buffer[idx_swp_2];
+        buffer[idx_swp_2]=swp;
       }
     }
     idx.bottom_top=1;
