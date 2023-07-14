@@ -13,6 +13,8 @@
 #ifndef _GEOGRID_INDEX_H_
 #define _GEOGRID_INDEX_H_
 
+#include <stdint.h>
+
 /* okay, so c does have a bool type... */
 #ifndef __cplusplus
 typedef unsigned int bool;
@@ -36,13 +38,13 @@ typedef enum {
 /* geogrid index struct */
 typedef struct {
   int tile_bdr;  /* border to put around each data tile */
-  int nx;        /* global image size in longitude (x) */
-  int ny;        /* global image size in latitude (y) */
-  int nz;        /* global image size vertically (z) */
-  int tx;        /* tile size in longitude (x) */
-  int ty;        /* tile size in latitude (y) */
-  int tz_s;      /* tile starting index in z (unused for 2d images) */
-  int tz_e;      /* tile ending index in z (unused for 2d images) */
+  int64_t nx;    /* global image size in longitude (x) */
+  int64_t ny;    /* global image size in latitude (y) */
+  int64_t nz;    /* global image size vertically (z) */
+  int64_t tx;    /* tile size in longitude (x) */
+  int64_t ty;    /* tile size in latitude (y) */
+  int64_t tz_s;  /* tile starting index in z (unused for 2d images) */
+  int64_t tz_e;  /* tile ending index in z (unused for 2d images) */
   bool isigned;  /* data is signed, true: yes, false: no */
   bool endian;   /* output endianness is, true: little, false: big */
   float scalefactor; /* amount to scale output before truncating to int */
@@ -60,8 +62,8 @@ typedef struct {
   
   float dx;         /* pixel resolution in x */
   float dy;         /* pixel resolution in y */
-  int known_x;      /* index location of known_lon */
-  int known_y;      /* index location of known_lat */
+  int64_t known_x;  /* index location of known_lon */
+  int64_t known_y;  /* index location of known_lat */
   float known_lat;  /* known latitude */
   float known_lon;  /* known longitude */
   float stdlon;     /* standard (central) longitude */
