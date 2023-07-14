@@ -12,24 +12,26 @@
 
 #include "geogrid_index.h"
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
   void write_index_file(const char *,const GeogridIndex);
-  void write_tile(int,int,const GeogridIndex,float*);
-  int ntiles(int,int);
-  int nxtiles(const GeogridIndex);
-  int nytiles(const GeogridIndex);
-  int nzsize(const GeogridIndex);
-  int gettilestart(int,int,const GeogridIndex);
-  int globalystride(const GeogridIndex);
-  int globalzstride(const GeogridIndex);
+  void write_tile(int64_t,int64_t,const GeogridIndex,float*);
+  int64_t ntiles(int64_t,int64_t);
+  int64_t nxtiles(const GeogridIndex);
+  int64_t nytiles(const GeogridIndex);
+  int64_t nzsize(const GeogridIndex);
+  int64_t gettilestart(int64_t,int64_t,const GeogridIndex);
+  int64_t globalystride(const GeogridIndex);
+  int64_t globalzstride(const GeogridIndex);
   float *alloc_tile_buffer(const GeogridIndex);
-  void get_tile_from_f(int,int,const GeogridIndex,const float*,float*);
+  void get_tile_from_f(int64_t,int64_t,const GeogridIndex,const float*,float*);
   void convert_from_f(const GeogridIndex,const float*);
   void process_buffer_f(const GeogridIndex,float*);
-  void set_tile_to(float*,const GeogridIndex,int,int);
+  void set_tile_to(float*,const GeogridIndex,int64_t,int64_t);
 
 #ifdef __cplusplus
 }

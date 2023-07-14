@@ -41,8 +41,8 @@
 /* common code for buffer conversion */
 #define _CONV_BUF                     \
 float *tptr;                          \
-int z,y,x;                            \
-int i0,i1,nimg;                       \
+int64_t z,y,x;                        \
+int64_t i0,i1,nimg;                   \
 tptr=tile;                            \
 i0=gettilestart(itile_x,itile_y,idx); \
 nimg=idx.nx*idx.ny*nzsize(idx);       \
@@ -65,7 +65,7 @@ for(z=0;z<nzsize(idx);z++) {          \
 
 /* common code for tile creation */
 #define _CONV_FILE(_GET_FUN)                           \
-int itile_x,itile_y;                                   \
+int64_t itile_x,itile_y;                               \
 float *tile;                                           \
 tile=alloc_tile_buffer(idx);                           \
 for(itile_y=0;itile_y<nytiles(idx);itile_y++) {        \
@@ -218,13 +218,13 @@ void write_index_file(
 /* Extracts information from a GeogridIndex structure to 
    construct tiles from global buffer. */
 void write_tile(
-  int itile_x,            /* tile column number */
-  int itile_y,            /* tile row number */
+  int64_t itile_x,        /* tile column number */
+  int64_t itile_y,        /* tile row number */
   const GeogridIndex idx, /* initialized index structure for metadata */
   float *arr              /* tile data buffer */
                 )
 {
-  int itx,ity,isgn,endian,nx,ny,nz;
+  int64_t itx,ity,isgn,endian,nx,ny,nz;
   
   /* get global index for construction tile file name */
   itx=itile_x*idx.tx+1;
@@ -247,21 +247,21 @@ void write_tile(
 }
 
 /* get the number of tiles in a row or column */
-int ntiles(int n, int t)
+int64_t ntiles(int64_t n, int64_t t)
 {
   return ( ceil( (double) n / (double) t ) );
 }
 
-int nxtiles(const GeogridIndex idx) {
+int64_t nxtiles(const GeogridIndex idx) {
   return (ntiles(idx.nx,idx.tx));
 }
 
-int nytiles(const GeogridIndex idx) {
+int64_t nytiles(const GeogridIndex idx) {
   return (ntiles(idx.ny,idx.ty));
 }
 
 /* get the number of vertical levels */
-int nzsize(const GeogridIndex idx) {
+int64_t nzsize(const GeogridIndex idx) {
   if (idx.nz <= 0)
     return (idx.tz_e - idx.tz_s + 1);
   else
@@ -271,24 +271,24 @@ int nzsize(const GeogridIndex idx) {
 /* get the global index of the first element of a tile (including border) 
    the index returned might be < 0 or > the global image size, due to the 
    border, the calling routine should should set invalid indices to missing */
-int gettilestart(
-  int itile_x,             /* tile column number */
-  int itile_y,             /* tile row number */
+int64_t gettilestart(
+  int64_t itile_x,         /* tile column number */
+  int64_t itile_y,         /* tile row number */
   const GeogridIndex idx   /* index structure */
                  ) {
-  int sx,                  /* global column number */
-      sy;                  /* global row number */
+  int64_t sx,              /* global column number */
+          sy;              /* global row number */
   sx=itile_x * idx.tx - idx.tile_bdr;
   sy=itile_y * idx.ty - idx.tile_bdr;
   return (sy * idx.nx + sx);
 }
 
 /* get global strides */
-int globalystride(const GeogridIndex idx) {
+int64_t globalystride(const GeogridIndex idx) {
   return (idx.nx);
 }
 
-int globalzstride(const GeogridIndex idx) {
+int64_t globalzstride(const GeogridIndex idx) {
   return (idx.nx*idx.ny);
 }
 
@@ -308,30 +308,30 @@ float* alloc_tile_buffer(const GeogridIndex idx) {
 /* get the requested tile from the global buffer,
    cast to float */
 void get_tile_from_d(
-  int itile_x,int itile_y,  /* tile column/row */
-  const GeogridIndex idx,   /* index structure */
-  const double *databuf,    /* global data buffer (double) */
-  float *tile               /* tile data buffer */
+  int64_t itile_x,int64_t itile_y,/* tile column/row */
+  const GeogridIndex idx,         /* index structure */
+  const double *databuf,          /* global data buffer (double) */
+  float *tile                     /* tile data buffer */
                      ) {
   const double *gptr;
   _CONV_BUF
 }
 
 void get_tile_from_f(
-  int itile_x,int itile_y,  /* tile column/row */
-  const GeogridIndex idx,   /* index structure */
-  const float *databuf,     /* global data buffer (float, no casting) */
-  float *tile               /* tile data buffer */
+  int64_t itile_x,int64_t itile_y,/* tile column/row */
+  const GeogridIndex idx,         /* index structure */
+  const float *databuf,           /* global data buffer (float, no casting) */
+  float *tile                     /* tile data buffer */
                      ) {
   const float *gptr;
   _CONV_BUF
 }
 
 void get_tile_from_i(
-  int itile_x,int itile_y,  /* tile column/row */
-  const GeogridIndex idx,   /* index structure */
-  const int *databuf,       /* global data buffer (int) */
-  float *tile               /* tile data buffer */
+  int64_t itile_x,int64_t itile_y,   /* tile column/row */
+  const GeogridIndex idx,            /* index structure */
+  const int *databuf,                /* global data buffer (int) */
+  float *tile                        /* tile data buffer */
                      ) {
   const int *gptr;
   _CONV_BUF
@@ -365,7 +365,7 @@ void process_buffer_f(
                       const GeogridIndex idx, /* index structure */
                       float *databuf          /* global data buffer (float) */
                       ) {
-  long i;
+  int64_t i;
   float *ptr;
   if (idx.categorical) {                  /* for categorical fields... */
     for(i=0;i<idx.nx*idx.ny*idx.nz;i++) { /* loop over all pixels */
@@ -378,8 +378,8 @@ void process_buffer_f(
   }
 }
 
-void set_tile_to(float* tile,const GeogridIndex idx,int itile_x,int itile_y) {
-  int n,i;
+void set_tile_to(float* tile,const GeogridIndex idx,int64_t itile_x,int64_t itile_y) {
+  int64_t n,i;
   float v0;
   n=(idx.tx + 2*idx.tile_bdr) * (idx.ty + 2*idx.tile_bdr) * nzsize(idx);
   v0=itile_x + itile_y * 10;

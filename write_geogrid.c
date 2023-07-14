@@ -45,18 +45,18 @@ typedef unsigned long iarray_t;
 
 int write_geogrid(
                  const float * rarray,          /* The array to be written */
-                 const int * nx,                /* x-dimension of the array */
-                 const int * ix,                /* starting x-index of the tile */
-                 const int * ny,                /* y-dimension of the array */
-                 const int * iy,                /* starting y-index of the tile */
-                 const int * nz,                /* z-dimension of the array */
+                 const int64_t * nx,            /* x-dimension of the array */
+                 const int64_t * ix,            /* starting x-index of the tile */
+                 const int64_t * ny,            /* y-dimension of the array */
+                 const int64_t * iy,            /* starting y-index of the tile */
+                 const int64_t * nz,            /* z-dimension of the array */
                  const int * bdr,               /* tile border width */
                  const int * isigned,           /* 0=unsigned data, 1=signed data */
                  const int * endian,            /* 0=big endian, 1=little endian */
                  const float * scalefactor,     /* value to divide array elements by before truncation to integers */
                  const int * wordsize )         /* number of bytes to use for each array element */
 {
-  int i, narray;
+  int64_t i, narray;
   int A2, B2;
   int A3, B3, C3;
   int A4, B4, C4, D4;
@@ -64,7 +64,7 @@ int write_geogrid(
   unsigned char * barray;
   char fname[24];
   FILE * bfile;
-  int ixs,ixe,iys,iye;
+  int64_t ixs,ixe,iys,iye;
   const iarray_t one=1;
   
   ixs = (*ix);

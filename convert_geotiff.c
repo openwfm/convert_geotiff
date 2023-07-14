@@ -57,6 +57,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 const int GEO_DEBUG=0;
 
@@ -80,8 +81,8 @@ void print_usage(FILE* f,const char* name) {
 }
 
 int main (int argc, char * argv[]) {
-  
-  int c,i,j;
+  int64_t idx_swp_1, idx_swp_2, i, j;
+  int c;
   int categorical_range,border_width,word_size,isigned,tile_size;
   float scale,missing;
   GeogridIndex idx;
@@ -185,7 +186,7 @@ int main (int argc, char * argv[]) {
     print_usage(stderr,argv[0]);
     exit(EXIT_FAILURE);
   }
-  
+
   strcpy(filename,argv[optind]);
   
   /* open geotiff file */
@@ -231,13 +232,15 @@ int main (int argc, char * argv[]) {
   
   /* read geotiff file */
   buffer=get_tiff_buffer(file);
- 
+
   if(!idx.bottom_top) {
     for(i=0;i<idx.ny/2;i++) {
       for(j=0;j<idx.nx;j++) {
-	swp=buffer[i*idx.nx+j];
-	buffer[i*idx.nx+j]=buffer[(idx.ny-i-1)*idx.nx+j];
-	buffer[(idx.ny-i-1)*idx.nx+j]=swp;
+        idx_swp_1 = i*idx.nx+j;
+        idx_swp_2 = (idx.ny-i-1)*idx.nx+j;
+        swp=buffer[idx_swp_1];
+        buffer[idx_swp_1]=buffer[idx_swp_2];
+        buffer[idx_swp_2]=swp;
       }
     }
     idx.bottom_top=1;
